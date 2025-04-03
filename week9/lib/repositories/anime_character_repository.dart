@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/anime_character.dart';
+import '../models/dto/anime_character_dto.dart';
 
 abstract class AnimeRepository {
   Future<AnimeCharacter> addCharacter({
