@@ -69,4 +69,26 @@ class AnimeCharacterProvider extends ChangeNotifier {
       fetchCharacters();
     }
   }
+
+  void updateCharacter(String id, String name, double powerLevel) async {
+    try {
+      final updatedCharacter = await _repository.updateCharacter(
+        id: id,
+        name: name,
+        powerLevel: powerLevel,
+      );
+
+      final currentList = charactersState?.data ?? [];
+      final updatedList =
+          currentList.map((character) {
+            return character.id == id ? updatedCharacter : character;
+          }).toList();
+
+      charactersState = AsyncValue.success(updatedList);
+      notifyListeners();
+    } catch (error) {
+      print("UPDATE ERROR: $error");
+      fetchCharacters();
+    }
+  }
 }

@@ -9,6 +9,11 @@ abstract class AnimeRepository {
     required double powerLevel,
   });
   Future<List<AnimeCharacter>> getCharacters();
+  Future<AnimeCharacter> updateCharacter({
+    required String id,
+    required String name,
+    required double powerLevel,
+  });
 }
 
 class FirebaseAnimeCharacterRepository extends AnimeRepository {
@@ -55,28 +60,57 @@ class FirebaseAnimeCharacterRepository extends AnimeRepository {
 
     final data = json.decode(response.body);
 
-    // Handle array response format
+    if (data == null) return [];
+
+    // Convert array format to proper structure
     if (data is List) {
-      return data
-          .where((item) => item != null) // Filter out null entries
-          .map(
-            (item) => AnimeCharacter(
-              id: item['id'] ?? 'unknown',
-              name: item['name'] ?? 'Unknown',
-              powerLevel: (item['powerLevel'] ?? 0).toDouble(),
-            ),
-          )
-          .toList();
+      return data.asMap().entries.where((entry) => entry.value != null).map((
+        entry,
+      ) {
+        final item = entry.value;
+        return AnimeCharacter(
+          id: entry.key.toString(),
+          name: item['name'] ?? 'Unknown',
+          powerLevel: (item['powerLevel'] ?? 0).toDouble(),
+        );
+      }).toList();
     }
 
-    // Handle map response format (fallback)
     if (data is Map<String, dynamic>) {
       return data.entries
+          .where((entry) => entry.value != null)
           .map((entry) => AnimeCharacterDto.fromJson(entry.key, entry.value))
           .toList();
     }
 
-    print("ERROR: Unexpected response format: $data");
     return [];
+  }
+
+  @override
+  Future<AnimeCharacter> updateCharacter({
+    required String id,
+    required String name,
+    required double powerLevel,
+  }) async {
+    final url = '$baseUrl/$charactersCollection/$id.json';
+    Uri uri = Uri.parse(url);
+
+    final updateData = {
+      'name': name,
+      'powerLevel': powerLevel,
+      'anime': 'Unknown',
+    };
+
+    final response = await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(updateData),
+    );
+
+    if (response.statusCode != HttpStatus.ok) {
+      throw Exception('Failed to update character');
+    }
+
+    return AnimeCharacter(id: id, name: name, powerLevel: powerLevel);
   }
 }
